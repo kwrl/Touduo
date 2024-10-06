@@ -1,0 +1,56 @@
+﻿@page "/"
+@using Toudou.Domain.Models
+@using Touduo.EventSourcing.Contract.Repositories
+
+@rendermode InteractiveServer
+
+<PageTitle>Home</PageTitle>
+
+<div>
+    <h1>@CurrentTodo?.Description</h1>
+    <p>Status: @CurrentTodo?.Status</p>
+    @if (CurrentTodo?.Status == TodoStatus.Pending)
+    {
+        <button class="btn btn-primary" @onclick="OnCompleteButtonClickedAsync">Complete</button>
+        <button class="btn btn-warning" @onclick="OnCancelButtonClickedAsync">Cancel</button>
+    }
+</div>
+
+@code
+{
+    [Inject] 
+    public IAggregateRepository<Todo> TodoRepository { get; set; } = default!;
+    
+    [Inject]
+    public ILogger<Home> Logger { get; set; } = default!;
+
+    public Todo? CurrentTodo { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentTodo = Todo.Create(Guid.NewGuid(), "Buy milk");
+        await TodoRepository.SaveAsync(CurrentTodo);
+    }
+
+    private async Task OnCompleteButtonClickedAsync()
+    {
+        if(CurrentTodo == null)
+        {
+            return;
+        }
+        
+        CurrentTodo.Complete();
+        await TodoRepository.SaveAsync(CurrentTodo);
+    }
+    
+    private async Task OnCancelButtonClickedAsync()
+    {
+        if(CurrentTodo == null)
+        {
+            return;
+        }
+
+        CurrentTodo.Cancel();
+        await TodoRepository.SaveAsync(CurrentTodo);
+    }
+}
